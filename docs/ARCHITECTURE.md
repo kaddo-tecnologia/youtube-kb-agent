@@ -4,7 +4,7 @@
 
 | Módulo | Responsabilidade |
 | --- | --- |
-| `bin/cli.js` | Launcher do `npx`: acha Python 3.10+, cria o venv em `<data-dir>/venv`, instala `requirements.txt` quando o hash muda e roda `python -m ytkb`. Sem dependências npm, sem `postinstall`, nunca usa shell. |
+| `bin/cli.js` | Launcher do `npx`: acha Python 3.11+, cria o venv em `<data-dir>/venv`, instala `requirements.txt` quando o hash muda e roda `python -m ytkb`. Sem dependências npm, sem `postinstall`, nunca usa shell. |
 | `ytkb/__main__.py` | Argumentos, pasta de dados, sobe o servidor e abre o navegador. |
 | `ytkb/paths.py` | Layout da pasta de dados e `safe_join()`, que impede qualquer caminho de sair dela. |
 | `ytkb/rules.py` | Lê e grava `REGRAS.md` (assunto, duração máxima, diretrizes). Toda validação de entrada das regras mora aqui. |

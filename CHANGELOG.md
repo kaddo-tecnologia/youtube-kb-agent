@@ -4,6 +4,9 @@ Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/). 
 
 ## Não publicado
 
+### Alterado
+- Python mínimo passa a ser 3.11 (exigência do yt-dlp atual).
+
 ## 0.1.0
 
 Primeira versão pública.

@@ -24,7 +24,7 @@ npx @kaddo-tecnologia/youtube-kb-agent
 | Item | Versão | Observação |
 | --- | --- | --- |
 | Node.js | 18.17+ | Só para o comando `npx` |
-| Python | 3.10+ | O `npx` cria um ambiente isolado; não mexe no seu Python global |
+| Python | 3.11+ | O `npx` cria um ambiente isolado; não mexe no seu Python global |
 | Ollama | atual | Com um modelo de chat: `ollama pull qwen3.5:9b` |
 | ffmpeg | opcional | Não é necessário no modo padrão |
 
@@ -99,7 +99,7 @@ Este projeto lê legendas públicas para estudo pessoal. Respeite os [Termos de 
 
 | Sintoma | Causa provável | O que fazer |
 | --- | --- | --- |
-| `Python 3.10+ não encontrado` | Python ausente do PATH | Instale em python.org e marque "Add to PATH" |
+| `Python 3.11+ não encontrado` | Python ausente do PATH | Instale em python.org e marque "Add to PATH" |
 | `Ollama indisponível` | Ollama desligado | `ollama serve` ou abra o app do Ollama |
 | `Nenhum modelo de chat instalado` | Só há modelos de embedding | `ollama pull qwen3.5:9b` |
 | Muitos vídeos `Pulado (Vídeo sem legendas)` | Criadores desativaram legendas | Normal: esses vídeos são pulados e o agente segue para os próximos |

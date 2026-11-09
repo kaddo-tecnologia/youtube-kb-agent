@@ -80,7 +80,7 @@ function must(result, what) {
 
 function findPython() {
   for (const [cmd, ...pre] of pythonCandidates()) {
-    const r = run(cmd, [...pre, "-c", "import sys; print(sys.version_info >= (3, 10))"]);
+    const r = run(cmd, [...pre, "-c", "import sys; print(sys.version_info >= (3, 11))"]);
     if (r.status === 0 && r.stdout.trim() === "True") return { cmd, pre };
   }
   return null;
@@ -96,7 +96,7 @@ function ensureVenv(dataDir, opts) {
   }
   if (!fs.existsSync(py)) {
     const found = findPython();
-    if (!found) throw new Error("Python 3.10+ não encontrado. Instale em https://www.python.org/downloads/ e rode de novo.");
+    if (!found) throw new Error("Python 3.11+ não encontrado. Instale em https://www.python.org/downloads/ e rode de novo.");
     console.log(`Criando ambiente Python em ${venvDir} ...`);
     fs.mkdirSync(dataDir, { recursive: true });
     const created = run(found.cmd, [...found.pre, "-m", "venv", venvDir], { stdio: "inherit" });

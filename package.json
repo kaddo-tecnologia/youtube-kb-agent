@@ -1,0 +1,31 @@
+{
+  "name": "@kaddo-tecnologia/youtube-kb-agent",
+  "version": "0.1.0",
+  "description": "Agente local que assiste vídeos do YouTube sobre um assunto e consolida conhecimento e skills com Ollama.",
+  "license": "MIT",
+  "bin": {
+    "youtube-kb-agent": "bin/cli.js"
+  },
+  "files": [
+    "bin/cli.js",
+    "ytkb/*.py",
+    "ytkb/REGRAS.example.md",
+    "ytkb/web/",
+    "requirements.txt"
+  ],
+  "engines": {
+    "node": ">=18.17"
+  },
+  "scripts": {
+    "test": "node --test tests/cli.test.js"
+  },
+  "keywords": ["youtube", "ollama", "knowledge-base", "llm", "agent", "skills", "local-first"],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kaddo-tecnologia/youtube-kb-agent.git"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  }
+}

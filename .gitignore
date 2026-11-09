@@ -1,0 +1,25 @@
+# Python / Node
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+node_modules/
+*.tgz
+
+# Dados do usuário: nunca versionar (bases derivadas de vídeos de terceiros)
+/REGRAS.md
+knowledge/
+skills/
+state.json
+dev-data/
+.work/
+
+# Local
+.legacy/
+.kratos/
+.env
+*.log
+.DS_Store
+Thumbs.db

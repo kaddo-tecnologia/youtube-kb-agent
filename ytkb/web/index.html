@@ -1,0 +1,824 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>YouTube Knowledge Agent</title>
+  <script src="/vendor/marked.umd.js" defer></script>
+  <script src="/vendor/purify.min.js" defer></script>
+  <script src="/app.js" defer></script>
+  <style>
+    :root {
+      --bg-base: #07090e;
+      --bg-surface: #0f131d;
+      --bg-elevated: #161c2a;
+      --bg-input: #0a0d14;
+      --border-subtle: rgba(148, 163, 184, 0.12);
+      --border-strong: rgba(148, 163, 184, 0.24);
+      --text-primary: #f8fafc;
+      --text-secondary: #cbd5e1;
+      --text-muted: #64748b;
+      --accent-blue: #38bdf8;
+      --accent-blue-glow: rgba(56, 189, 248, 0.14);
+      --accent-purple: #a855f7;
+      --accent-purple-glow: rgba(168, 85, 247, 0.16);
+      --status-green: #10b981;
+      --status-red: #ef4444;
+      --status-amber: #f59e0b;
+      --radius-sm: 6px;
+      --radius-md: 10px;
+      --radius-lg: 14px;
+      --shadow-card: 0 10px 30px -10px rgba(0, 0, 0, 0.55);
+    }
+
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg-base);
+      color: var(--text-primary);
+      font-size: 14px;
+      line-height: 1.55;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* Scrollbars */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(148, 163, 184, 0.22); border-radius: 99px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(148, 163, 184, 0.38); }
+
+    /* Top Navigation Bar */
+    .topbar {
+      height: 64px;
+      background: rgba(15, 19, 29, 0.88);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border-subtle);
+      padding: 0 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      position: sticky;
+      top: 0;
+      z-index: 30;
+    }
+
+    .brand-group {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      min-width: 0;
+    }
+
+    .logo-mark {
+      width: 36px;
+      height: 36px;
+      border-radius: 9px;
+      background: linear-gradient(135deg, rgba(56, 189, 248, 0.2), rgba(168, 85, 247, 0.2));
+      border: 1px solid rgba(56, 189, 248, 0.35);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--accent-blue);
+      flex-shrink: 0;
+    }
+
+    .brand-meta {
+      min-width: 0;
+    }
+
+    .brand-title-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .brand-title {
+      font-size: 0.98rem;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      margin: 0;
+      white-space: nowrap;
+    }
+
+    .badge-model {
+      font-family: "JetBrains Mono", ui-monospace, Consolas, monospace;
+      font-size: 0.72rem;
+      padding: 2px 8px;
+      border-radius: 99px;
+      background: rgba(56, 189, 248, 0.1);
+      border: 1px solid rgba(56, 189, 248, 0.28);
+      color: var(--accent-blue);
+    }
+
+    .status-line {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.78rem;
+      color: var(--text-secondary);
+      margin-top: 2px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--text-muted);
+      flex-shrink: 0;
+    }
+    .status-dot.running {
+      background: var(--status-green);
+      box-shadow: 0 0 10px var(--status-green);
+      animation: pulseGlow 1.6s infinite;
+    }
+    @keyframes pulseGlow {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.45; transform: scale(0.92); }
+    }
+
+    .top-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-shrink: 0;
+    }
+
+    .timer-pill {
+      font-family: "JetBrains Mono", ui-monospace, Consolas, monospace;
+      font-size: 0.75rem;
+      color: var(--status-amber);
+      background: rgba(245, 158, 11, 0.1);
+      border: 1px solid rgba(245, 158, 11, 0.3);
+      padding: 5px 10px;
+      border-radius: var(--radius-sm);
+    }
+
+    /* Form Controls & Buttons */
+    input, select, textarea {
+      font-family: inherit;
+      font-size: 0.84rem;
+      color: var(--text-primary);
+      background: var(--bg-input);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+      padding: 8px 11px;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    input:focus, select:focus, textarea:focus {
+      outline: none;
+      border-color: var(--accent-blue);
+      box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.12);
+    }
+    label {
+      display: block;
+      font-size: 0.74rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--text-muted);
+      margin-bottom: 5px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      font-family: inherit;
+      font-size: 0.82rem;
+      font-weight: 600;
+      padding: 8px 14px;
+      border-radius: var(--radius-sm);
+      border: 1px solid transparent;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      white-space: nowrap;
+    }
+    .btn:active { transform: translateY(1px); }
+
+    .btn-primary {
+      background: var(--accent-blue);
+      color: #04131d;
+      border-color: #0284c7;
+    }
+    .btn-primary:hover { background: #7dd3fc; }
+
+    .btn-start {
+      background: var(--status-green);
+      color: #022c22;
+      border-color: #059669;
+    }
+    .btn-start:hover { background: #34d399; }
+
+    .btn-stop {
+      background: var(--status-red);
+      color: #fff;
+      border-color: #dc2626;
+    }
+    .btn-stop:hover { background: #f87171; }
+
+    .btn-skill {
+      background: linear-gradient(135deg, #9333ea, #7c3aed);
+      color: #fff;
+      border-color: rgba(192, 132, 252, 0.4);
+      box-shadow: 0 2px 12px rgba(168, 85, 247, 0.25);
+    }
+    .btn-skill:hover { filter: brightness(1.1); }
+
+    .btn-ghost {
+      background: var(--bg-elevated);
+      color: var(--text-secondary);
+      border-color: var(--border-subtle);
+    }
+    .btn-ghost:hover {
+      border-color: var(--border-strong);
+      color: var(--text-primary);
+    }
+
+    /* Main Workspace Grid */
+    .workspace {
+      display: grid;
+      grid-template-columns: 410px 1fr;
+      gap: 18px;
+      padding: 18px 24px;
+      height: calc(100vh - 64px);
+      max-width: 1920px;
+      margin: 0 auto;
+    }
+    @media (max-width: 1080px) {
+      .workspace {
+        grid-template-columns: 1fr;
+        height: auto;
+      }
+    }
+
+    .sidebar {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      min-height: 0;
+      overflow-y: auto;
+      padding-right: 2px;
+    }
+
+    .panel-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 14px 16px;
+      box-shadow: var(--shadow-card);
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+    .card-title {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      margin: 0;
+    }
+    .card-subtitle {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+    }
+
+    .grid-topic-dur {
+      display: grid;
+      grid-template-columns: 1fr 96px;
+      gap: 10px;
+    }
+
+    .url-ingest-group {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 8px;
+    }
+
+    /* Library List */
+    .kb-list {
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+      max-height: 190px;
+      overflow-y: auto;
+    }
+    .kb-card {
+      padding: 9px 12px;
+      border-radius: var(--radius-sm);
+      background: var(--bg-input);
+      border: 1px solid var(--border-subtle);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      transition: all 0.14s ease;
+    }
+    .kb-card:hover {
+      border-color: var(--border-strong);
+      background: rgba(22, 28, 42, 0.7);
+    }
+    .kb-card.selected {
+      border-color: var(--accent-blue);
+      background: var(--accent-blue-glow);
+    }
+    .kb-card-main {
+      min-width: 0;
+      flex: 1;
+    }
+    .kb-card-title {
+      font-weight: 600;
+      font-size: 0.83rem;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .kb-card-meta {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      margin-top: 2px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .pill-active {
+      font-size: 0.65rem;
+      font-weight: 700;
+      padding: 1px 6px;
+      border-radius: 99px;
+      background: rgba(16, 185, 129, 0.15);
+      color: var(--status-green);
+      border: 1px solid rgba(16, 185, 129, 0.35);
+    }
+    .pill-skill {
+      font-size: 0.68rem;
+      font-weight: 600;
+      padding: 1px 7px;
+      border-radius: 4px;
+      background: var(--accent-purple-glow);
+      border: 1px solid rgba(168, 85, 247, 0.45);
+      color: #e9d5ff;
+    }
+    .pill-count {
+      font-family: "JetBrains Mono", ui-monospace, Consolas, monospace;
+      font-size: 0.71rem;
+      padding: 3px 8px;
+      border-radius: 99px;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-secondary);
+      white-space: nowrap;
+    }
+
+    /* Telemetry Console */
+    .terminal-card {
+      flex: 1;
+      min-height: 170px;
+    }
+    .terminal-box {
+      background: #05070b;
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+      padding: 10px 12px;
+      font-family: "JetBrains Mono", ui-monospace, Consolas, monospace;
+      font-size: 0.74rem;
+      line-height: 1.5;
+      color: var(--text-secondary);
+      flex: 1;
+      overflow-y: auto;
+    }
+    .log-line { margin-bottom: 3px; word-break: break-word; }
+    .log-time { color: var(--accent-blue); margin-right: 6px; }
+    .log-ok { color: var(--status-green); }
+    .log-warn { color: var(--status-amber); }
+
+    /* Right Studio Container */
+    .studio {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      box-shadow: var(--shadow-card);
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+      overflow: hidden;
+    }
+
+    .studio-header {
+      padding: 14px 20px;
+      border-bottom: 1px solid var(--border-subtle);
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      background: rgba(22, 28, 42, 0.45);
+    }
+
+    .tab-bar {
+      display: inline-flex;
+      background: var(--bg-input);
+      padding: 3px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border-subtle);
+      gap: 3px;
+    }
+    .tab-btn {
+      font-family: inherit;
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      background: transparent;
+      border: none;
+      padding: 6px 12px;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .tab-btn:hover { color: var(--text-primary); }
+    .tab-btn.active {
+      background: var(--bg-elevated);
+      color: var(--text-primary);
+      box-shadow: 0 1px 4px rgba(0,0,0,0.4);
+    }
+
+    .studio-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    /* Metrics Bar */
+    .metrics-strip {
+      padding: 8px 20px;
+      background: var(--bg-input);
+      border-bottom: 1px solid var(--border-subtle);
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 20px;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+    .metric-item strong {
+      color: var(--text-secondary);
+      font-family: "JetBrains Mono", ui-monospace, Consolas, monospace;
+      margin-left: 4px;
+    }
+
+    /* Content Area */
+    .studio-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 28px 36px;
+    }
+    @media (max-width: 768px) {
+      .studio-body { padding: 18px; }
+    }
+
+    /* Markdown Typography */
+    .markdown-prose {
+      max-width: 920px;
+      margin: 0 auto;
+      color: var(--text-secondary);
+      font-size: 0.95rem;
+      line-height: 1.7;
+    }
+    .markdown-prose h1 {
+      font-size: 1.65rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      letter-spacing: -0.02em;
+      margin: 0 0 18px 0;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+    .markdown-prose h2 {
+      font-size: 1.22rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin: 28px 0 12px 0;
+      padding-bottom: 6px;
+      border-bottom: 1px solid rgba(148, 163, 184, 0.08);
+    }
+    .markdown-prose h3 {
+      font-size: 1.02rem;
+      font-weight: 600;
+      color: var(--accent-blue);
+      margin: 20px 0 8px 0;
+    }
+    .markdown-prose p { margin: 0 0 14px 0; }
+    .markdown-prose ul, .markdown-prose ol {
+      margin: 0 0 16px 0;
+      padding-left: 22px;
+    }
+    .markdown-prose li { margin-bottom: 6px; }
+    .markdown-prose strong { color: var(--text-primary); font-weight: 600; }
+    .markdown-prose a { color: var(--accent-blue); text-decoration: none; }
+    .markdown-prose a:hover { text-decoration: underline; }
+    .markdown-prose hr {
+      border: none;
+      border-top: 1px solid var(--border-subtle);
+      margin: 26px 0;
+    }
+    .markdown-prose code {
+      font-family: "JetBrains Mono", ui-monospace, Consolas, monospace;
+      font-size: 0.84em;
+      background: var(--bg-elevated);
+      color: #f8fafc;
+      padding: 2px 6px;
+      border-radius: 4px;
+      border: 1px solid var(--border-subtle);
+    }
+    .markdown-prose pre {
+      background: #06080d;
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+      padding: 14px 16px;
+      overflow-x: auto;
+      margin: 14px 0;
+    }
+    .markdown-prose pre code {
+      background: none;
+      border: none;
+      padding: 0;
+    }
+    .markdown-prose blockquote {
+      margin: 14px 0;
+      padding: 10px 16px;
+      border-left: 3px solid var(--accent-blue);
+      background: rgba(56, 189, 248, 0.05);
+      border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+    }
+
+    .raw-editor-view {
+      max-width: 960px;
+      margin: 0 auto;
+      background: #06080d;
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+      padding: 18px 20px;
+      font-family: "JetBrains Mono", ui-monospace, Consolas, monospace;
+      font-size: 0.82rem;
+      line-height: 1.6;
+      color: var(--text-secondary);
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    /* Sources Grid View */
+    .sources-container {
+      max-width: 920px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+    .sources-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 12px;
+    }
+    .source-card {
+      background: var(--bg-input);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+      padding: 12px 14px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 8px;
+    }
+    .source-card a {
+      color: var(--text-primary);
+      font-weight: 600;
+      font-size: 0.86rem;
+      text-decoration: none;
+    }
+    .source-card a:hover { color: var(--accent-blue); }
+    .source-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 0.74rem;
+      color: var(--text-muted);
+    }
+    .query-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .query-chip {
+      font-family: "JetBrains Mono", ui-monospace, Consolas, monospace;
+      font-size: 0.75rem;
+      padding: 4px 10px;
+      border-radius: 99px;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-secondary);
+    }
+
+    /* Toast Notification */
+    .toast-stack {
+      position: fixed;
+      bottom: 20px;
+      right: 24px;
+      z-index: 100;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .toast {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border-strong);
+      border-left: 4px solid var(--accent-blue);
+      color: var(--text-primary);
+      padding: 10px 16px;
+      border-radius: var(--radius-sm);
+      box-shadow: 0 10px 25px rgba(0,0,0,0.6);
+      font-size: 0.82rem;
+      font-weight: 500;
+      animation: slideIn 0.2s ease;
+    }
+    .toast.error { border-left-color: var(--status-red); }
+    .toast.success { border-left-color: var(--status-green); }
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand-group">
+      <div class="logo-mark" title="YouTube Knowledge Agent">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <polygon points="5 3 19 12 5 21 5 3"></polygon>
+        </svg>
+      </div>
+      <div class="brand-meta">
+        <div class="brand-title-row">
+          <h1 class="brand-title">YouTube Knowledge Agent</h1>
+          <span id="modelTag" class="badge-model">qwen3.5:9b</span>
+        </div>
+        <div class="status-line">
+          <span id="statusDot" class="status-dot"></span>
+          <span id="phaseText">Inicializando painel...</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="top-actions">
+      <span id="timerInfo" class="timer-pill" style="display:none"></span>
+      <select id="durationSelect" title="Período de execução autônoma">
+        <option value="0">Execução Contínua (Até parar)</option>
+        <option value="15">Timer: 15 minutos</option>
+        <option value="30">Timer: 30 minutos</option>
+        <option value="60">Timer: 1 hora</option>
+        <option value="120">Timer: 2 horas</option>
+        <option value="240">Timer: 4 horas</option>
+        <option value="custom">Personalizado (min)...</option>
+      </select>
+      <input id="customMinutes" type="number" min="1" max="1440" placeholder="Minutos" style="width:92px;display:none" />
+      <button id="btnStart" class="btn btn-start">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+        Ativar Agente
+      </button>
+      <button id="btnStop" class="btn btn-stop" style="display:none">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><rect x="4" y="4" width="16" height="16" rx="2"></rect></svg>
+        Parar Agente
+      </button>
+    </div>
+  </header>
+
+  <main class="workspace">
+    <!-- Left Control Column -->
+    <aside class="sidebar">
+      <!-- Rules & Topic Card -->
+      <section class="panel-card">
+        <div class="card-header">
+          <h2 class="card-title">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--accent-blue)" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
+            Regras de Estudo (REGRAS.md)
+          </h2>
+          <span class="card-subtitle">Sincronizado na raiz</span>
+        </div>
+
+        <div class="grid-topic-dur">
+          <div>
+            <label for="topicInput">Assunto / Domínio Ativo</label>
+            <input id="topicInput" type="text" style="width:100%" placeholder="Ex: Agentes Autônomos com Ollama" />
+          </div>
+          <div>
+            <label for="maxMinInput">Máx. (min)</label>
+            <input id="maxMinInput" type="number" min="1" max="120" value="30" style="width:100%" />
+          </div>
+        </div>
+
+        <div>
+          <label for="guidelinesInput">Diretrizes de Filtragem e Consolidação</label>
+          <textarea id="guidelinesInput" rows="3" style="width:100%;resize:vertical"></textarea>
+        </div>
+
+        <button id="btnSaveRules" class="btn btn-primary" style="width:100%">
+          Salvar Regras / Alternar Assunto
+        </button>
+      </section>
+
+      <!-- Individual Link Ingestion Card -->
+      <section class="panel-card">
+        <div class="card-header">
+          <h2 class="card-title">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--status-green)" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
+            Ingestão Individual de Vídeo
+          </h2>
+          <span class="card-subtitle">Complementa a base ativa</span>
+        </div>
+        <div class="url-ingest-group">
+          <input id="singleUrlInput" type="url" placeholder="https://www.youtube.com/watch?v=..." />
+          <button id="btnProcessUrl" class="btn btn-ghost">Ler Link</button>
+        </div>
+      </section>
+
+      <!-- Knowledge Bases & Skills Library -->
+      <section class="panel-card">
+        <div class="card-header">
+          <h2 class="card-title">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--accent-purple)" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
+            Biblioteca de Bases & Skills
+          </h2>
+          <span id="kbCountLabel" class="card-subtitle">0 bases</span>
+        </div>
+        <div id="kbList" class="kb-list"></div>
+      </section>
+
+      <!-- Live Telemetry Console -->
+      <section class="panel-card terminal-card">
+        <div class="card-header">
+          <h2 class="card-title">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary)" stroke-width="2"><polyline points="4 17 10 11 4 5"></polyline><line x1="12" y1="19" x2="20" y2="19"></line></svg>
+            Telemetria de Execução
+          </h2>
+          <span class="card-subtitle">Playwright · claude-video · Ollama</span>
+        </div>
+        <div id="logBox" class="terminal-box"></div>
+      </section>
+    </aside>
+
+    <!-- Right Knowledge & Skill Studio -->
+    <section class="studio">
+      <div class="studio-header">
+        <div class="tab-bar">
+          <button id="tabBtnFormatted" class="tab-btn active" data-tab="formatted">📄 Documento Consolidado</button>
+          <button id="tabBtnRaw" class="tab-btn" data-tab="raw">📝 Markdown (.md)</button>
+          <button id="tabBtnSources" class="tab-btn" data-tab="sources">🎬 Vídeos Fontes</button>
+          <button id="tabBtnSkill" class="tab-btn" data-tab="skill">⚡ Skill (SKILL.md)</button>
+        </div>
+
+        <div class="studio-actions">
+          <button id="btnCreateSkill" class="btn btn-skill">
+            ⚡ Criar / Atualizar Skill
+          </button>
+          <button id="btnCopy" class="btn btn-ghost">Copiar</button>
+          <button id="btnDownload" class="btn btn-ghost">Baixar .md</button>
+        </div>
+      </div>
+
+      <div class="metrics-strip">
+        <span class="metric-item">Arquivo: <strong id="metricFile">—</strong></span>
+        <span class="metric-item">Vídeos Consolidados: <strong id="metricVideos">0</strong></span>
+        <span class="metric-item">Buscas: <strong id="metricQueries">0</strong></span>
+        <span class="metric-item">Palavras: <strong id="metricWords">0</strong></span>
+        <span class="metric-item">Status da Skill: <strong id="metricSkill">Não gerada</strong></span>
+      </div>
+
+      <div id="studioBody" class="studio-body"></div>
+    </section>
+  </main>
+
+  <div id="toastStack" class="toast-stack"></div>
+</body>
+</html>
